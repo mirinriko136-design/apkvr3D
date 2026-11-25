@@ -1,0 +1,294 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Global default-deny safety net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        (request.auth.token.email == 'mirinriko136@gmail.com' && request.auth.token.email_verified == true) ||
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
+    }
+
+    function isValidSubject(subject) {
+      return subject in ['BAHASA_INDONESIA', 'MATEMATIKA', 'BAHASA_INGGRIS', 'IPA', 'IPS'];
+    }
+
+    function isValidUserProfile(data) {
+      return data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+        data.displayName is string && data.displayName.size() >= 1 && data.displayName.size() <= 60 &&
+        data.role in ['student', 'teacher'] &&
+        data.gradeLevel is int && data.gradeLevel >= 1 && data.gradeLevel <= 6 &&
+        (!('schoolName' in data) || (data.schoolName is string && data.schoolName.size() <= 80)) &&
+        (!('avatarColor' in data) || (data.avatarColor is string && data.avatarColor.size() <= 20)) &&
+        data.totalXp is int && data.totalXp >= 0 && data.totalXp <= 10000000 &&
+        data.level is int && data.level >= 1 && data.level <= 999 &&
+        (!('streakDays' in data) || (data.streakDays is int && data.streakDays >= 0 && data.streakDays <= 3650)) &&
+        (!('totalCorrect' in data) || (data.totalCorrect is int && data.totalCorrect >= 0)) &&
+        (!('totalAnswered' in data) || (data.totalAnswered is int && data.totalAnswered >= 0)) &&
+        (!('duelWins' in data) || (data.duelWins is int && data.duelWins >= 0)) &&
+        (!('duelPlayed' in data) || (data.duelPlayed is int && data.duelPlayed >= 0)) &&
+        (!('soundEnabled' in data) || data.soundEnabled is bool) &&
+        (!('biometricEnabled' in data) || data.biometricEnabled is bool) &&
+        (!('themeMode' in data) || data.themeMode in ['system', 'light', 'dark']) &&
+        (!('dailyReminderEnabled' in data) || data.dailyReminderEnabled is bool) &&
+        (!('dailyReminderHour' in data) || (data.dailyReminderHour is int && data.dailyReminderHour >= 0 && data.dailyReminderHour <= 23)) &&
+        (!('dailyReminderMinute' in data) || (data.dailyReminderMinute is int && data.dailyReminderMinute >= 0 && data.dailyReminderMinute <= 59)) &&
+        (!('dashboardWidgets' in data) || (data.dashboardWidgets is list && data.dashboardWidgets.size() <= 10 && (data.dashboardWidgets.size() == 0 || data.dashboardWidgets[0] is string))) &&
+        (!('lastDriveSyncAt' in data) || (data.lastDriveSyncAt is timestamp && data.lastDriveSyncAt <= request.time)) &&
+        data.createdAt is timestamp && data.createdAt <= request.time &&
+        data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    function isValidQuizSession(data) {
+      return data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+        isValidSubject(data.subject) &&
+        data.mode in ['SOLO_VR', 'MULTIPLAYER_ONLINE', 'MULTIPLAYER_LOCAL'] &&
+        data.score is int && data.score >= 0 && data.score <= 100000 &&
+        data.correctCount is int && data.correctCount >= 0 && data.correctCount <= 50 &&
+        data.totalQuestions is int && data.totalQuestions >= 1 && data.totalQuestions <= 50 &&
+        data.durationSeconds is int && data.durationSeconds >= 1 && data.durationSeconds <= 3600 &&
+        data.xpEarned is int && data.xpEarned >= 0 && data.xpEarned <= 10000 &&
+        data.dayKey is string && data.dayKey.size() == 10 &&
+        data.createdAt is timestamp && data.createdAt <= request.time;
+    }
+
+    function isValidStudySchedule(data) {
+      return data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+        data.title is string && data.title.size() >= 1 && data.title.size() <= 100 &&
+        data.subject in ['BAHASA_INDONESIA', 'MATEMATIKA', 'BAHASA_INGGRIS', 'IPA', 'IPS', 'UMUM'] &&
+        data.dueAtMillis is int && data.dueAtMillis >= 0 &&
+        data.reminderMinutesBefore is int && data.reminderMinutesBefore >= 0 && data.reminderMinutesBefore <= 1440 &&
+        data.completed is bool &&
+        data.calendarSynced is bool &&
+        (!('notes' in data) || (data.notes is string && data.notes.size() <= 300)) &&
+        data.createdAt is timestamp && data.createdAt <= request.time &&
+        data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    function isValidLeaderboardEntry(data) {
+      return data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+        data.displayName is string && data.displayName.size() >= 1 && data.displayName.size() <= 60 &&
+        (!('schoolName' in data) || (data.schoolName is string && data.schoolName.size() <= 80)) &&
+        data.gradeLevel is int && data.gradeLevel >= 1 && data.gradeLevel <= 6 &&
+        data.totalXp is int && data.totalXp >= 0 && data.totalXp <= 10000000 &&
+        data.level is int && data.level >= 1 && data.level <= 999 &&
+        data.duelWins is int && data.duelWins >= 0 &&
+        data.accuracyPct is int && data.accuracyPct >= 0 && data.accuracyPct <= 100 &&
+        data.createdAt is timestamp && data.createdAt <= request.time &&
+        data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    function isValidQuestion(data) {
+      return data.authorId is string && data.authorId.size() >= 1 && data.authorId.size() <= 128 &&
+        data.authorName is string && data.authorName.size() >= 1 && data.authorName.size() <= 60 &&
+        isValidSubject(data.subject) &&
+        data.gradeLevel is int && data.gradeLevel >= 1 && data.gradeLevel <= 6 &&
+        data.difficulty in ['MUDAH', 'SEDANG', 'SULIT'] &&
+        data.prompt is string && data.prompt.size() >= 5 && data.prompt.size() <= 300 &&
+        data.options is list && data.options.size() == 4 &&
+        data.options[0] is string && data.options[0].size() >= 1 && data.options[0].size() <= 120 &&
+        data.options[1] is string && data.options[1].size() >= 1 && data.options[1].size() <= 120 &&
+        data.options[2] is string && data.options[2].size() >= 1 && data.options[2].size() <= 120 &&
+        data.options[3] is string && data.options[3].size() >= 1 && data.options[3].size() <= 120 &&
+        data.correctIndex is int && data.correctIndex >= 0 && data.correctIndex <= 3 &&
+        data.explanation is string && data.explanation.size() <= 400 &&
+        data.published is bool &&
+        data.createdAt is timestamp && data.createdAt <= request.time &&
+        data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    function isValidDuelRoom(data) {
+      return data.roomCode is string && data.roomCode.size() >= 4 && data.roomCode.size() <= 12 &&
+        isValidSubject(data.subject) &&
+        data.gradeLevel is int && data.gradeLevel >= 1 && data.gradeLevel <= 6 &&
+        data.status in ['WAITING', 'PLAYING', 'FINISHED'] &&
+        data.hostId is string && data.hostId.size() >= 1 && data.hostId.size() <= 128 &&
+        data.hostName is string && data.hostName.size() >= 1 && data.hostName.size() <= 60 &&
+        data.hostScore is int && data.hostScore >= 0 && data.hostScore <= 100000 &&
+        data.hostProgress is int && data.hostProgress >= 0 && data.hostProgress <= 20 &&
+        (!('guestId' in data) || (data.guestId is string && data.guestId.size() >= 1 && data.guestId.size() <= 128)) &&
+        (!('guestName' in data) || (data.guestName is string && data.guestName.size() >= 1 && data.guestName.size() <= 60)) &&
+        data.guestScore is int && data.guestScore >= 0 && data.guestScore <= 100000 &&
+        data.guestProgress is int && data.guestProgress >= 0 && data.guestProgress <= 20 &&
+        (!('winnerId' in data) || (data.winnerId is string && data.winnerId.size() <= 128)) &&
+        data.questionSeeds is list && data.questionSeeds.size() <= 20 &&
+        (data.questionSeeds.size() == 0 || data.questionSeeds[0] is string) &&
+        data.createdAt is timestamp && data.createdAt <= request.time &&
+        data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    // Trusted Admin registry (read-only for self)
+    match /admins/{userId} {
+      allow get: if isValidId(userId) && isOwner(userId);
+      allow list, create, update, delete: if false;
+    }
+
+    // Private User Profiles & Preferences
+    match /users/{userId} {
+      allow get: if isValidId(userId) && isOwner(userId);
+      allow list: if false;
+      allow create: if isValidId(userId) && isOwner(userId) &&
+        isValidUserProfile(incoming()) &&
+        incoming().userId == request.auth.uid &&
+        incoming().keys().hasAll(['userId', 'displayName', 'role', 'gradeLevel', 'totalXp', 'level', 'createdAt', 'updatedAt']) &&
+        incoming().keys().hasOnly([
+          'userId', 'displayName', 'role', 'gradeLevel', 'schoolName', 'avatarColor',
+          'totalXp', 'level', 'streakDays', 'totalCorrect', 'totalAnswered',
+          'duelWins', 'duelPlayed', 'soundEnabled', 'biometricEnabled', 'themeMode',
+          'dailyReminderEnabled', 'dailyReminderHour', 'dailyReminderMinute',
+          'dashboardWidgets', 'lastDriveSyncAt', 'createdAt', 'updatedAt'
+        ]);
+      allow update: if isValidId(userId) && isOwner(userId) &&
+        isValidUserProfile(incoming()) &&
+        incoming().userId == existing().userId &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().diff(existing()).affectedKeys().hasOnly([
+          'displayName', 'role', 'gradeLevel', 'schoolName', 'avatarColor',
+          'totalXp', 'level', 'streakDays', 'totalCorrect', 'totalAnswered',
+          'duelWins', 'duelPlayed', 'soundEnabled', 'biometricEnabled', 'themeMode',
+          'dailyReminderEnabled', 'dailyReminderHour', 'dailyReminderMinute',
+          'dashboardWidgets', 'lastDriveSyncAt', 'updatedAt'
+        ]);
+      allow delete: if isValidId(userId) && isOwner(userId);
+
+      // Quiz Sessions Subcollection
+      match /quiz_sessions/{sessionId} {
+        allow get: if isValidId(userId) && isValidId(sessionId) && isOwner(userId);
+        allow list: if isValidId(userId) && isOwner(userId);
+        allow create: if isValidId(userId) && isValidId(sessionId) && isOwner(userId) &&
+          isValidQuizSession(incoming()) &&
+          incoming().userId == request.auth.uid &&
+          incoming().keys().hasAll(['userId', 'subject', 'mode', 'score', 'correctCount', 'totalQuestions', 'durationSeconds', 'xpEarned', 'dayKey', 'createdAt']) &&
+          incoming().keys().hasOnly(['userId', 'subject', 'mode', 'score', 'correctCount', 'totalQuestions', 'durationSeconds', 'xpEarned', 'dayKey', 'createdAt']);
+        allow update: if false;
+        allow delete: if isValidId(userId) && isValidId(sessionId) && isOwner(userId);
+      }
+
+      // Study Schedules & Deadlines Subcollection
+      match /study_schedules/{scheduleId} {
+        allow get: if isValidId(userId) && isValidId(scheduleId) && isOwner(userId);
+        allow list: if isValidId(userId) && isOwner(userId);
+        allow create: if isValidId(userId) && isValidId(scheduleId) && isOwner(userId) &&
+          isValidStudySchedule(incoming()) &&
+          incoming().userId == request.auth.uid &&
+          incoming().keys().hasAll(['userId', 'title', 'subject', 'dueAtMillis', 'reminderMinutesBefore', 'completed', 'calendarSynced', 'createdAt', 'updatedAt']) &&
+          incoming().keys().hasOnly(['userId', 'title', 'subject', 'dueAtMillis', 'reminderMinutesBefore', 'completed', 'calendarSynced', 'notes', 'createdAt', 'updatedAt']);
+        allow update: if isValidId(userId) && isValidId(scheduleId) && isOwner(userId) &&
+          isValidStudySchedule(incoming()) &&
+          incoming().userId == existing().userId &&
+          incoming().createdAt == existing().createdAt &&
+          incoming().diff(existing()).affectedKeys().hasOnly(['title', 'subject', 'dueAtMillis', 'reminderMinutesBefore', 'completed', 'calendarSynced', 'notes', 'updatedAt']);
+        allow delete: if isValidId(userId) && isValidId(scheduleId) && isOwner(userId);
+      }
+    }
+
+    // Public Leaderboard (No PII)
+    match /leaderboard/{userId} {
+      allow get: if isSignedIn() && isValidId(userId);
+      allow list: if isSignedIn() && resource.data.totalXp >= 0;
+      allow create: if isValidId(userId) && isOwner(userId) &&
+        isValidLeaderboardEntry(incoming()) &&
+        incoming().userId == request.auth.uid &&
+        incoming().keys().hasAll(['userId', 'displayName', 'gradeLevel', 'totalXp', 'level', 'duelWins', 'accuracyPct', 'createdAt', 'updatedAt']) &&
+        incoming().keys().hasOnly(['userId', 'displayName', 'schoolName', 'gradeLevel', 'totalXp', 'level', 'duelWins', 'accuracyPct', 'createdAt', 'updatedAt']);
+      allow update: if isValidId(userId) && isOwner(userId) &&
+        isValidLeaderboardEntry(incoming()) &&
+        incoming().userId == existing().userId &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'schoolName', 'gradeLevel', 'totalXp', 'level', 'duelWins', 'accuracyPct', 'updatedAt']);
+      allow delete: if isValidId(userId) && isOwner(userId);
+    }
+
+    // Teacher & Admin Question Bank
+    match /questions/{questionId} {
+      allow get: if isSignedIn() && isValidId(questionId) &&
+        (existing().published == true || existing().authorId == request.auth.uid || isAdmin());
+      allow list: if isSignedIn() &&
+        (resource.data.published == true || resource.data.authorId == request.auth.uid || isAdmin());
+      allow create: if isSignedIn() && isValidId(questionId) &&
+        isValidQuestion(incoming()) &&
+        incoming().authorId == request.auth.uid &&
+        incoming().keys().hasAll(['authorId', 'authorName', 'subject', 'gradeLevel', 'difficulty', 'prompt', 'options', 'correctIndex', 'explanation', 'published', 'createdAt', 'updatedAt']) &&
+        incoming().keys().hasOnly(['authorId', 'authorName', 'subject', 'gradeLevel', 'difficulty', 'prompt', 'options', 'correctIndex', 'explanation', 'published', 'createdAt', 'updatedAt']);
+      allow update: if isSignedIn() && isValidId(questionId) &&
+        isValidQuestion(incoming()) &&
+        (existing().authorId == request.auth.uid || isAdmin()) &&
+        incoming().authorId == existing().authorId &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().diff(existing()).affectedKeys().hasOnly(['authorName', 'subject', 'gradeLevel', 'difficulty', 'prompt', 'options', 'correctIndex', 'explanation', 'published', 'updatedAt']);
+      allow delete: if isSignedIn() && isValidId(questionId) &&
+        (existing().authorId == request.auth.uid || isAdmin());
+    }
+
+    // Real-Time Online Multiplayer Duel Rooms
+    match /duel_rooms/{roomId} {
+      allow get: if isSignedIn() && isValidId(roomId) &&
+        (existing().status == 'WAITING' || existing().hostId == request.auth.uid || existing().guestId == request.auth.uid || isAdmin());
+      allow list: if isSignedIn() &&
+        (resource.data.status == 'WAITING' || resource.data.hostId == request.auth.uid || resource.data.guestId == request.auth.uid);
+      allow create: if isSignedIn() && isValidId(roomId) &&
+        isValidDuelRoom(incoming()) &&
+        incoming().hostId == request.auth.uid &&
+        incoming().status == 'WAITING' &&
+        !('guestId' in incoming()) &&
+        !('guestName' in incoming()) &&
+        !('winnerId' in incoming()) &&
+        incoming().keys().hasAll(['roomCode', 'subject', 'gradeLevel', 'status', 'hostId', 'hostName', 'hostScore', 'hostProgress', 'guestScore', 'guestProgress', 'questionSeeds', 'createdAt', 'updatedAt']) &&
+        incoming().keys().hasOnly(['roomCode', 'subject', 'gradeLevel', 'status', 'hostId', 'hostName', 'hostScore', 'hostProgress', 'guestScore', 'guestProgress', 'questionSeeds', 'createdAt', 'updatedAt']);
+      allow update: if isSignedIn() && isValidId(roomId) &&
+        isValidDuelRoom(incoming()) &&
+        (existing().status != 'FINISHED' || isAdmin()) &&
+        incoming().hostId == existing().hostId &&
+        incoming().createdAt == existing().createdAt && (
+          isAdmin() ||
+          // Action 1: Guest joins an open WAITING room
+          (
+            existing().status == 'WAITING' &&
+            !('guestId' in existing()) &&
+            existing().hostId != request.auth.uid &&
+            incoming().guestId == request.auth.uid &&
+            incoming().status == 'PLAYING' &&
+            incoming().diff(existing()).affectedKeys().hasOnly(['guestId', 'guestName', 'status', 'updatedAt'])
+          ) ||
+          // Action 2: Host updates score/progress or finishes duel
+          (
+            existing().hostId == request.auth.uid &&
+            incoming().diff(existing()).affectedKeys().hasOnly(['hostScore', 'hostProgress', 'status', 'winnerId', 'updatedAt'])
+          ) ||
+          // Action 3: Guest updates score/progress or finishes duel
+          (
+            ('guestId' in existing()) &&
+            existing().guestId == request.auth.uid &&
+            incoming().guestId == existing().guestId &&
+            incoming().diff(existing()).affectedKeys().hasOnly(['guestScore', 'guestProgress', 'status', 'winnerId', 'updatedAt'])
+          )
+        );
+      allow delete: if isSignedIn() && isValidId(roomId) &&
+        ((existing().hostId == request.auth.uid && existing().status == 'WAITING') || isAdmin());
+    }
+  }
+}

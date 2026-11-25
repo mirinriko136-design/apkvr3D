@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">DuelPintar3D VR</string>
+    <string name="tagline_vr_learning">Arena Kuis 3D &amp; VR Anak SD</string>
+    <string name="sign_in_google">Masuk dengan Google</string>
+    <string name="notification_channel_id">duelpintar_study_reminders</string>
+    <string name="notification_channel_name">Pengingat Belajar &amp; Tugas</string>
+    <string name="notification_channel_desc">Notifikasi jadwal belajar harian dan tenggat waktu tugas DuelPintar3D VR</string>
+</resources>

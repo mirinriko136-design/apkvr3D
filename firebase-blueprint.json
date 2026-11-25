@@ -1,0 +1,159 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Student or teacher profile, XP progress, customizable dashboard layout, and app preferences.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "displayName": { "type": "string" },
+        "role": { "type": "string", "enum": ["student", "teacher"] },
+        "gradeLevel": { "type": "integer" },
+        "schoolName": { "type": "string" },
+        "avatarColor": { "type": "string" },
+        "totalXp": { "type": "integer" },
+        "level": { "type": "integer" },
+        "streakDays": { "type": "integer" },
+        "totalCorrect": { "type": "integer" },
+        "totalAnswered": { "type": "integer" },
+        "duelWins": { "type": "integer" },
+        "duelPlayed": { "type": "integer" },
+        "soundEnabled": { "type": "boolean" },
+        "biometricEnabled": { "type": "boolean" },
+        "themeMode": { "type": "string", "enum": ["system", "light", "dark"] },
+        "dailyReminderEnabled": { "type": "boolean" },
+        "dailyReminderHour": { "type": "integer" },
+        "dailyReminderMinute": { "type": "integer" },
+        "dashboardWidgets": { "type": "array" },
+        "lastDriveSyncAt": { "type": "string", "format": "date-time" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "displayName", "role", "gradeLevel", "totalXp", "level", "createdAt", "updatedAt"]
+    },
+    "QuizSession": {
+      "title": "QuizSession",
+      "description": "Completed solo VR or multiplayer quiz session for analytics and weekly productivity reports.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "subject": { "type": "string", "enum": ["BAHASA_INDONESIA", "MATEMATIKA", "BAHASA_INGGRIS", "IPA", "IPS"] },
+        "mode": { "type": "string", "enum": ["SOLO_VR", "MULTIPLAYER_ONLINE", "MULTIPLAYER_LOCAL"] },
+        "score": { "type": "integer" },
+        "correctCount": { "type": "integer" },
+        "totalQuestions": { "type": "integer" },
+        "durationSeconds": { "type": "integer" },
+        "xpEarned": { "type": "integer" },
+        "dayKey": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "subject", "mode", "score", "correctCount", "totalQuestions", "durationSeconds", "xpEarned", "dayKey", "createdAt"]
+    },
+    "StudySchedule": {
+      "title": "StudySchedule",
+      "description": "Student study schedule and task deadline synced across devices and cloud calendar.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "title": { "type": "string" },
+        "subject": { "type": "string", "enum": ["BAHASA_INDONESIA", "MATEMATIKA", "BAHASA_INGGRIS", "IPA", "IPS", "UMUM"] },
+        "dueAtMillis": { "type": "integer" },
+        "reminderMinutesBefore": { "type": "integer" },
+        "completed": { "type": "boolean" },
+        "calendarSynced": { "type": "boolean" },
+        "notes": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "title", "subject", "dueAtMillis", "reminderMinutesBefore", "completed", "calendarSynced", "createdAt", "updatedAt"]
+    },
+    "LeaderboardEntry": {
+      "title": "LeaderboardEntry",
+      "description": "Public student ranking entry without PII.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "displayName": { "type": "string" },
+        "schoolName": { "type": "string" },
+        "gradeLevel": { "type": "integer" },
+        "totalXp": { "type": "integer" },
+        "level": { "type": "integer" },
+        "duelWins": { "type": "integer" },
+        "accuracyPct": { "type": "integer" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "displayName", "gradeLevel", "totalXp", "level", "duelWins", "accuracyPct", "createdAt", "updatedAt"]
+    },
+    "QuizQuestion": {
+      "title": "QuizQuestion",
+      "description": "Elementary school quiz question managed via teacher admin dashboard.",
+      "type": "object",
+      "properties": {
+        "authorId": { "type": "string" },
+        "authorName": { "type": "string" },
+        "subject": { "type": "string", "enum": ["BAHASA_INDONESIA", "MATEMATIKA", "BAHASA_INGGRIS", "IPA", "IPS"] },
+        "gradeLevel": { "type": "integer" },
+        "difficulty": { "type": "string", "enum": ["MUDAH", "SEDANG", "SULIT"] },
+        "prompt": { "type": "string" },
+        "options": { "type": "array" },
+        "correctIndex": { "type": "integer" },
+        "explanation": { "type": "string" },
+        "published": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["authorId", "authorName", "subject", "gradeLevel", "difficulty", "prompt", "options", "correctIndex", "explanation", "published", "createdAt", "updatedAt"]
+    },
+    "DuelRoom": {
+      "title": "DuelRoom",
+      "description": "Real-time 2-player online quiz duel room.",
+      "type": "object",
+      "properties": {
+        "roomCode": { "type": "string" },
+        "subject": { "type": "string", "enum": ["BAHASA_INDONESIA", "MATEMATIKA", "BAHASA_INGGRIS", "IPA", "IPS"] },
+        "gradeLevel": { "type": "integer" },
+        "status": { "type": "string", "enum": ["WAITING", "PLAYING", "FINISHED"] },
+        "hostId": { "type": "string" },
+        "hostName": { "type": "string" },
+        "hostScore": { "type": "integer" },
+        "hostProgress": { "type": "integer" },
+        "guestId": { "type": "string" },
+        "guestName": { "type": "string" },
+        "guestScore": { "type": "integer" },
+        "guestProgress": { "type": "integer" },
+        "winnerId": { "type": "string" },
+        "questionSeeds": { "type": "array" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["roomCode", "subject", "gradeLevel", "status", "hostId", "hostName", "hostScore", "hostProgress", "guestScore", "guestProgress", "questionSeeds", "createdAt", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "Private user profile and dashboard customization state."
+    },
+    "/users/{userId}/quiz_sessions/{sessionId}": {
+      "schema": { "$ref": "#/entities/QuizSession" },
+      "description": "Per-user quiz attempt history for analytics and weekly reports."
+    },
+    "/users/{userId}/study_schedules/{scheduleId}": {
+      "schema": { "$ref": "#/entities/StudySchedule" },
+      "description": "Per-user study schedules and assignment deadlines."
+    },
+    "/leaderboard/{userId}": {
+      "schema": { "$ref": "#/entities/LeaderboardEntry" },
+      "description": "Public student leaderboard rankings."
+    },
+    "/questions/{questionId}": {
+      "schema": { "$ref": "#/entities/QuizQuestion" },
+      "description": "Question bank authored by teachers and admins."
+    },
+    "/duel_rooms/{roomId}": {
+      "schema": { "$ref": "#/entities/DuelRoom" },
+      "description": "Real-time multiplayer duel match rooms."
+    }
+  }
+}

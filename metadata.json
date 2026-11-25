@@ -1,0 +1,6 @@
+{
+  "name": "DuelPintar3D VR",
+  "description": "Game edukasi kuis 3D dan VR interaktif untuk siswa SD dengan multiplayer real-time, leaderboard, analitik belajar, jadwal kalender cloud, sinkronisasi Google Drive, dan dasbor admin guru.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
